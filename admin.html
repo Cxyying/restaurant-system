@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>餐厅管理系统 - 后台管理</title>
+  <link rel="stylesheet" href="css/admin.css?v=4">
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 呼叫服务员大弹窗 -->
+<div class="call-alert-overlay" id="callAlert">
+  <div class="call-alert-box">
+    <div class="call-alert-icon">🔔</div>
+    <div class="call-alert-title">客人呼叫服务员</div>
+    <div class="call-alert-table" id="callAlertTable">--</div>
+    <div class="call-alert-subtitle">正在呼叫服务员，请您尽快处理！</div>
+    <div class="call-alert-time">呼叫时间：<span id="callAlertTime">--:--</span></div>
+    <input type="hidden" id="callAlertId" value="0">
+    <div class="call-alert-actions">
+      <button class="call-alert-btn call-alert-btn-primary" onclick="handleCallAlert()">✅ 立即处理</button>
+      <button class="call-alert-btn call-alert-btn-later" onclick="closeCallAlert()">稍后处理</button>
+    </div>
+  </div>
+</div>
+
+<!-- 侧边栏 -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🍽️</div>
+    <div class="logo-text">西荣餐厅</div>
+    <div class="logo-sub">管理后台 v25</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group-title">核心功能</div>
+    <div class="nav-item active" onclick="showSection('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">📊</span><span>数据概览</span>
+    </div>
+    <div class="nav-item" onclick="showSection('orders')" id="nav-orders">
+      <span class="nav-icon">📋</span><span>订单管理</span>
+    </div>
+    <div class="nav-item" onclick="showSection('tables')" id="nav-tables">
+      <span class="nav-icon">🪑</span><span>桌台管理</span>
+    </div>
+    <div class="nav-group-title">菜单管理</div>
+    <div class="nav-item" onclick="showSection('dishes')" id="nav-dishes">
+      <span class="nav-icon">🍜</span><span>菜品管理</span>
+    </div>
+    <div class="nav-item" onclick="showSection('categories')" id="nav-categories">
+      <span class="nav-icon">📂</span><span>分类管理</span>
+    </div>
+    <div class="nav-group-title">运营分析</div>
+    <div class="nav-item" onclick="showSection('reports')" id="nav-reports">
+      <span class="nav-icon">📈</span><span>营业报表</span>
+    </div>
+    <div class="nav-item" onclick="showSection('ratings')" id="nav-ratings">
+      <span class="nav-icon">⭐</span><span>评价管理</span>
+    </div>
+    <div class="nav-group-title">系统设置</div>
+    <div class="nav-item" onclick="showSection('settings')" id="nav-settings">
+      <span class="nav-icon">⚙️</span><span>系统设置</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">© 2026 西荣餐厅</div>
+</nav>
+
+<!-- 主内容 -->
+<div class="main">
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title" id="pageTitle">数据概览</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-time" id="topbarTime"></div>
+      <div class="notification-bell" id="notifBell" onclick="onBellClick()">🔔<div class="notif-dot" id="notifDot"></div></div>
+      <div class="topbar-avatar">👨</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== 数据概览 ===== -->
+    <div class="page-section active" id="section-dashboard">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="dashboard-row">
+        <div class="card">
+          <div class="card-title">
+            <span><span class="title-icon">📋</span>最新订单</span>
+            <button class="btn btn-outline btn-sm" onclick="showSection('orders')">查看全部</button>
+          </div>
+          <div class="order-list-mini" id="recentOrders"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="title-icon">🪑</span>桌台状态</div>
+          <div class="table-map" id="dashTableMap" style="grid-template-columns:repeat(3,1fr)"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="title-icon">📊</span>今日热销菜品 TOP 8</div>
+        <div class="chart-bar-container" id="hotDishChart"></div>
+      </div>
+    </div>
+
+    <!-- ===== 订单管理 ===== -->
+    <div class="page-section" id="section-orders">
+      <div class="toolbar">
+        <input class="search-input" placeholder="🔍 搜索订单号、桌台..." id="orderSearch" oninput="filterOrders()">
+        <input class="search-input" style="width:150px" placeholder="📱 按手机号查询" id="orderPhoneFilter" oninput="filterOrders()" maxlength="11" inputmode="numeric">
+        <select class="filter-select" id="orderStatusFilter" onchange="filterOrders()">
+          <option value="">全部状态</option>
+          <option value="pending">待出餐</option>
+          <option value="served">已出餐</option>
+        </select>
+        <input type="date" class="filter-select" style="width:auto;cursor:pointer" id="orderDateFilter" onchange="filterOrders()" title="按日期筛选">
+        <select class="filter-select" id="orderMonthFilter" onchange="onMonthChange()">
+          <option value="">全部月份</option>
+        </select>
+        <button class="btn btn-primary" onclick="refreshOrders()">🔄 刷新</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>订单号</th>
+                <th>桌台</th>
+                <th>顾客手机号</th>
+                <th>菜品</th>
+                <th>金额</th>
+                <th>下单时间</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="orderTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 桌台管理 ===== -->
+    <div class="page-section" id="section-tables">
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="openTableModal()">+ 新增桌台</button>
+        <button class="btn btn-outline" onclick="resetAllTables()">🔄 重置所有桌台</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="title-icon">🗺️</span>餐厅桌台布局</div>
+        <div class="table-map" id="tableMap" style="grid-template-columns:repeat(4,1fr);gap:16px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 菜品管理 ===== -->
+    <div class="page-section" id="section-dishes">
+      <div class="toolbar">
+        <input class="search-input" placeholder="🔍 搜索菜品名称..." id="dishSearch" oninput="filterDishes()">
+        <select class="filter-select" id="dishCatFilter" onchange="filterDishes()">
+          <option value="">全部分类</option>
+        </select>
+        <button class="btn btn-primary" onclick="openDishModal()">+ 新增菜品</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>图标</th>
+                <th>菜品名称</th>
+                <th>分类</th>
+                <th>价格</th>
+                <th>已售</th>
+                <th>标签</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="dishTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 分类管理 ===== -->
+    <div class="page-section" id="section-categories">
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="openCatModal()">+ 新增分类</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>图标</th><th>分类名称</th><th>菜品数量</th><th>操作</th></tr></thead>
+            <tbody id="catTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 营业报表 ===== -->
+    <div class="page-section" id="section-reports">
+      <div class="stats-grid" id="reportStatsGrid"></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title"><span class="title-icon">💰</span>每日营业额趋势（最近7天）</div>
+        <div id="revenueChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="title-icon">🍜</span>菜品销售排行</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>排名</th><th>菜品</th><th>分类</th><th>单价</th><th>销售量</th><th>营业额</th></tr></thead>
+            <tbody id="salesRankTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 评价管理 ===== -->
+    <div class="page-section" id="section-ratings">
+      <div class="card">
+        <div class="card-title"><span class="title-icon">⭐</span>顾客评价列表</div>
+        <div id="ratingsContainer"></div>
+      </div>
+    </div>
+
+    <!-- ===== 系统设置 ===== -->
+    <div class="page-section" id="section-settings">
+      <div class="card" style="max-width:600px">
+        <div class="card-title"><span class="title-icon">⚙️</span>基本设置</div>
+        <div class="form-group">
+          <label class="form-label">餐厅名称</label>
+          <input class="form-control" id="settingName" placeholder="请输入餐厅名称">
+        </div>
+        <div class="form-group">
+          <label class="form-label">营业时间</label>
+          <div class="form-row">
+            <input class="form-control" id="settingOpen" type="time" value="10:00">
+            <input class="form-control" id="settingClose" type="time" value="22:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">公告/欢迎语</label>
+          <textarea class="form-control" id="settingNotice" rows="3" placeholder="输入餐厅公告..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 保存设置</button>
+        <button class="btn btn-danger" style="margin-left:12px" onclick="clearAllData()">⚠️ 清除所有数据</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ===== 菜品弹窗 ===== -->
+<div class="modal-overlay" id="dishModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="dishModalTitle">新增菜品</div>
+      <span class="modal-close" onclick="closeModal('dishModal')">×</span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">菜品名称 *</label>
+        <input class="form-control" id="df-name" placeholder="请输入菜品名称">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类 *</label>
+        <select class="form-control" id="df-cat"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">菜品描述</label>
+      <textarea class="form-control" id="df-desc" rows="2" placeholder="请输入菜品描述..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">价格（元）*</label>
+        <input class="form-control" id="df-price" type="number" min="0" step="0.5" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">图标 Emoji</label>
+        <input class="form-control" id="df-emoji" placeholder="🍜">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">标签（多选）</label>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="df-badge-hot"> 🔥 热销</label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="df-badge-new"> ✨ 新品</label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="df-badge-spicy"> 🌶️ 辣</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">状态</label>
+      <select class="form-control" id="df-available">
+        <option value="true">上架（可点餐）</option>
+        <option value="false">下架（暂停售卖）</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('dishModal')" style="background:var(--bg);color:var(--text-gray)">取消</button>
+      <button class="btn btn-primary" onclick="saveDish()">保存菜品</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 分类弹窗 ===== -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title" id="catModalTitle">新增分类</div>
+      <span class="modal-close" onclick="closeModal('catModal')">×</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">分类名称 *</label>
+      <input class="form-control" id="cf-name" placeholder="请输入分类名称">
+    </div>
+    <div class="form-group">
+      <label class="form-label">图标 Emoji</label>
+      <input class="form-control" id="cf-icon" placeholder="🍜">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('catModal')" style="background:var(--bg);color:var(--text-gray)">取消</button>
+      <button class="btn btn-primary" onclick="saveCat()">保存分类</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 桌台弹窗 ===== -->
+<div class="modal-overlay" id="tableModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title" id="tableModalTitle">新增桌台</div>
+      <span class="modal-close" onclick="closeModal('tableModal')">×</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">桌台名称 *</label>
+      <input class="form-control" id="tf-name" placeholder="如：1号桌、VIP包间">
+    </div>
+    <div class="form-group">
+      <label class="form-label">座位数 *</label>
+      <input class="form-control" id="tf-seats" type="number" min="1" value="4">
+    </div>
+    <div class="form-group">
+      <label class="form-label">状态</label>
+      <select class="form-control" id="tf-status">
+        <option value="free">空闲</option>
+        <option value="occupied">已占用</option>
+        <option value="reserved">已预订</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('tableModal')" style="background:var(--bg);color:var(--text-gray)">取消</button>
+      <button class="btn btn-primary" onclick="saveTable()">保存桌台</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 订单详情弹窗 -->
+<div class="modal-overlay" id="orderDetailModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">📋 订单详情 · 出餐管理</div>
+      <span class="modal-close" onclick="closeModal('orderDetailModal')">×</span>
+    </div>
+    <div id="orderDetailContent"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('orderDetailModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js?v=7"></script>
+<script src="js/admin.js?v=18"></script>
+</body>
+</html>

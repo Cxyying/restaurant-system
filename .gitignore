@@ -1,0 +1,8 @@
+node_modules/
+data.json
+.DS_Store
+server/node_modules/
+server/data.json
+server/package.json
+server/package-lock.json
+server/server.js

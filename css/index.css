@@ -1,0 +1,20 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: linear-gradient(135deg, #1A1D2E 0%, #2D3561 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.logo { font-size: 64px; margin-bottom: 16px; animation: bounce 2s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+h1 { color: white; font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+.subtitle { color: rgba(255,255,255,0.6); font-size: 15px; margin-bottom: 48px; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 640px; }
+.card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 32px 24px; text-align: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: white; backdrop-filter: blur(10px); }
+.card:hover { background: rgba(255,255,255,0.15); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.card .card-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+.card h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.card p { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+.card.mobile { border-color: rgba(255,107,53,0.4); }
+.card.mobile:hover { background: rgba(255,107,53,0.2); }
+.card.admin { border-color: rgba(24,144,255,0.4); }
+.card.admin:hover { background: rgba(24,144,255,0.2); }
+.card .tag { display: inline-block; margin-top: 12px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.card.mobile .tag { background: rgba(255,107,53,0.3); color: #FF6B35; }
+.card.admin .tag { background: rgba(24,144,255,0.3); color: #69C0FF; }
+.footer { margin-top: 40px; color: rgba(255,255,255,0.3); font-size: 12px; text-align: center; line-height: 1.8; }

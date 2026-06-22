@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="西荣点餐">
+  <meta name="theme-color" content="#ff6b35">
+  <title>餐厅点餐</title>
+  <link rel="stylesheet" href="css/app.css?v=9">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<!-- ===== 登录页（全屏覆盖） ===== -->
+<div class="login-page" id="loginPage">
+  <div class="login-bg-circle circle-1"></div>
+  <div class="login-bg-circle circle-2"></div>
+  <div class="login-bg-circle circle-3"></div>
+  <div class="login-container">
+    <div class="login-logo">🍽️</div>
+    <h1 class="login-title">西荣餐厅</h1>
+    <p class="login-subtitle">欢迎光临，请登录后开始点餐</p>
+    <div class="login-form">
+      <div class="input-group">
+        <span class="input-prefix">📱</span>
+        <input class="phone-input" id="phoneInput" type="tel" maxlength="11" placeholder="请输入手机号" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <div class="login-hint" id="loginHint">请输入11位手机号码</div>
+      <button class="login-btn" id="loginBtn" onclick="handleLogin()">登 录</button>
+    </div>
+    <p class="login-footer">首次登录自动注册 · 无需密码</p>
+  </div>
+</div>
+
+<!-- ===== 首页：选择模式 ===== -->
+<div class="page active" id="page-home" style="display:none;">
+  <div class="welcome-banner" id="welcomeBanner">
+    <h1>🍽️ 欢迎光临西荣餐厅</h1>
+    <p>今天又想吃点什么呢？</p>
+    <div class="home-user-bar" id="homeUserBar">
+      <span class="home-user-phone" id="homeUserPhone"></span>
+      <button class="logout-btn-home" onclick="doLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="choice-section">
+    <h3>请选择服务类型</h3>
+    <div class="choice-btns">
+      <button class="choice-btn new-order" onclick="showNewOrder()">🆕 未点餐？去点</button>
+      <button class="choice-btn add-dishes" onclick="showAddDishes()">➕ 加菜</button>
+      <button class="choice-btn reserve-table" onclick="showReservation()">📅 预约桌位</button>
+    </div>
+  </div>
+
+  <!-- 选桌（新点餐）-->
+  <div id="homeTableSelect" style="display:none">
+    <div class="table-select-section">
+      <div class="back-link" onclick="backToChoice()">← 返回</div>
+      <h3>📍 选择桌位</h3>
+      <div class="table-grid" id="tableGrid"></div>
+      <button class="start-order-btn" id="startOrderBtn" disabled onclick="startOrdering()">
+        请先选择桌位
+      </button>
+    </div>
+  </div>
+
+  <!-- 输入桌号（加菜）-->
+  <div id="homeAddTable" style="display:none">
+    <div class="add-table-section">
+      <div class="back-link" onclick="backToChoice()">← 返回</div>
+      <h3>请输入您的桌号</h3>
+      <input class="table-input" id="addTableInput" type="number" min="1" max="99" placeholder="例如：3" onkeydown="if(event.key==='Enter')confirmAddTable()">
+      <div class="table-input-hint">请输入您当前所在的桌号</div>
+      <button class="confirm-table-btn" onclick="confirmAddTable()">确认加菜</button>
+    </div>
+  </div>
+
+  <!-- 预约桌位 -->
+  <div id="homeReservation" style="display:none">
+    <div class="reserve-section">
+      <div class="back-link" onclick="backToChoice()">← 返回</div>
+      <h3>📅 预约桌位</h3>
+      <p class="reserve-subtitle">选择您想要的桌位和用餐时间</p>
+
+      <!-- 我的预约 -->
+      <div id="myReservationCard" class="my-reserve-card" style="display:none"></div>
+
+      <!-- 选桌 -->
+      <div class="reserve-label">选择桌位</div>
+      <div class="reserve-table-grid" id="reserveTableGrid"></div>
+      <div id="reserveTableHint" class="reserve-hint">请点击上方空闲桌位进行选择</div>
+
+      <!-- 预约时间 -->
+      <div class="reserve-label" style="margin-top:18px;">预约时间</div>
+      <input class="reserve-input" type="datetime-local" id="reserveTimeInput">
+
+      <!-- 备注（可选）-->
+      <div class="reserve-label" style="margin-top:14px;">备注（可选）</div>
+      <textarea class="reserve-note" id="reserveNote" placeholder="如：靠窗位置、生日聚餐等" rows="2"></textarea>
+
+      <button class="reserve-submit-btn" id="reserveSubmitBtn" disabled onclick="submitReservation()">
+        请先选择桌位
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 菜单页 ===== -->
+<div class="page" id="page-menu">
+  <div class="header">
+    <div class="header-top">
+      <div class="back-btn" onclick="goBackFromMenu()">← 返回</div>
+      <div class="header-title">🍽️ 点菜</div>
+      <div class="table-badge" id="menuTableBadge">--</div>
+    </div>
+  </div>
+  <div class="menu-layout">
+    <div class="category-sidebar" id="categorySidebar"></div>
+    <div class="menu-content" id="menuContent"></div>
+  </div>
+  <!-- 购物车浮动条（放在 page-menu 内，page-menu 隐藏时自动消失） -->
+  <div class="cart-float empty" id="cartFloat" onclick="toggleCart()">
+    <div class="cart-icon-wrap">
+      🛒
+      <div class="cart-badge" id="cartBadge" style="display:none">0</div>
+    </div>
+    <div class="cart-info">
+      <div class="cart-total" id="cartTotal">¥0.00</div>
+      <div class="cart-hint" id="cartHint">已选 0 件菜品</div>
+    </div>
+    <div class="cart-submit-btn" id="cartActionBtn" onclick="handleCartAction(event)">去下单</div>
+  </div>
+</div>
+
+<!-- ===== 购物车弹窗 ===== -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-panel-header">
+    <div class="cart-panel-title">🛒 已选菜品</div>
+    <div class="cart-clear-btn" onclick="clearCart()">清空</div>
+  </div>
+  <div class="cart-panel-body" id="cartPanelBody"></div>
+  <div class="cart-panel-footer">
+    <div class="cart-summary">
+      <span class="cart-total-label">合计</span>
+      <span class="cart-total-price" id="cartTotalPrice">¥0.00</span>
+    </div>
+    <button class="place-order-btn" onclick="submitOrder()">立即下单</button>
+  </div>
+</div>
+
+<!-- ===== 订单页 ===== -->
+<div class="page" id="page-orders">
+  <div style="background:white;padding:16px;font-size:20px;font-weight:700;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10;">我的订单</div>
+  <div class="orders-page" id="ordersContainer"></div>
+</div>
+
+<!-- ===== 我的页 ===== -->
+<div class="page" id="page-mine">
+  <div class="my-page">
+    <div class="user-card" id="userCard">
+      <div class="table-info" id="userTableInfo">--</div>
+      <div class="seat-count" id="userTableSeat">感谢您的光临 🙏</div>
+    </div>
+    <div class="menu-list">
+      <div class="menu-list-item" onclick="showHistoryOrders()">
+        <span class="item-icon">🕐</span>
+        <span class="item-label">历史订单</span>
+        <span class="item-arrow">›</span>
+      </div>
+      <div class="menu-list-item" onclick="showMyRatings()">
+        <span class="item-icon">📝</span>
+        <span class="item-label">我的评价</span>
+        <span class="item-arrow">›</span>
+      </div>
+      <div class="menu-list-item" onclick="showRating()">
+        <span class="item-icon">⭐</span>
+        <span class="item-label">评价菜品</span>
+        <span class="item-arrow">›</span>
+      </div>
+      <div class="menu-list-item" onclick="doLogout()" style="color:#FF4D4F;">
+        <span class="item-icon">🚪</span>
+        <span class="item-label" style="color:#FF4D4F;">退出登录</span>
+        <span class="item-arrow">›</span>
+      </div>
+    </div>
+    <button class="call-waiter-btn urge-btn" onclick="urgeOrder()" id="urgeBtn">⏰ 催促上菜</button>
+    <button class="call-waiter-btn" id="callWaiterBtn" onclick="callWaiter()">
+      🔔 呼叫服务员
+    </button>
+  </div>
+</div>
+
+<!-- ===== 底部导航 ===== -->
+<div class="bottom-nav" id="bottomNav">
+  <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu">
+    <div class="nav-icon">🍜</div>
+    <div class="nav-label">点餐</div>
+  </div>
+  <div class="nav-item" onclick="switchTab('orders')" id="nav-orders">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">我的订单</div>
+  </div>
+  <div class="nav-item" onclick="switchTab('mine')" id="nav-mine">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label">我的</div>
+  </div>
+</div>
+
+<!-- ===== 评价弹窗 ===== -->
+<div class="modal-overlay" id="ratingModal" onclick="hideModal('ratingModal')">
+ <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title">⭐ 菜品评价</div>
+    <div id="ratingOrderDishes"></div>
+    <div class="star-row" id="starRow">
+      <span class="star active" data-val="1" onclick="setRating(1)">⭐</span>
+      <span class="star active" data-val="2" onclick="setRating(2)">⭐</span>
+      <span class="star active" data-val="3" onclick="setRating(3)">⭐</span>
+      <span class="star active" data-val="4" onclick="setRating(4)">⭐</span>
+      <span class="star active" data-val="5" onclick="setRating(5)">⭐</span>
+    </div>
+    <textarea class="modal-textarea" id="ratingText" rows="3" placeholder="请分享您的用餐体验..."></textarea>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hideModal('ratingModal')">取消</button>
+      <button class="modal-btn confirm" onclick="submitRating()">提交评价</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 我的评价弹窗 ===== -->
+<div class="modal-overlay" id="myRatingsModal" onclick="hideModal('myRatingsModal')">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-height:75vh;display:flex;flex-direction:column;">
+    <div class="modal-title">📝 我的评价记录</div>
+    <div id="myRatingsBody" style="overflow-y:auto;flex:1;max-height:55vh;padding:0 4px;"></div>
+    <div style="padding-top:12px;">
+      <button class="modal-btn cancel" style="width:100%;" onclick="hideModal('myRatingsModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 历史订单弹窗 ===== -->
+<div class="modal-overlay" id="historyOrdersModal" onclick="hideModal('historyOrdersModal')">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-height:80vh;display:flex;flex-direction:column;">
+    <div class="modal-title">🕐 历史订单</div>
+    <div id="historyOrdersBody" style="overflow-y:auto;flex:1;max-height:60vh;padding:0 4px;"></div>
+    <div style="padding-top:12px;">
+      <button class="modal-btn cancel" style="width:100%;" onclick="hideModal('historyOrdersModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 加菜错误提示弹窗 ===== -->
+<div class="modal-overlay" id="addTableErrModal" onclick="hideModal('addTableErrModal')">
+  <div class="modal-box" onclick="event.stopPropagation()" style="text-align:center;max-width:320px;">
+    <div style="font-size:48px;margin-bottom:12px;">😅</div>
+    <div class="modal-title" id="addTableErrTitle">提示</div>
+    <div id="addTableErrMsg" style="font-size:14px;color:#666;line-height:1.8;margin:12px 0 20px;"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hideModal('addTableErrModal')">我知道了</button>
+      <button class="modal-btn confirm" onclick="hideModal('addTableErrModal');backToChoice();">返回选桌</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/data.js?v=7"></script>
+<script src="js/app.js?v=34"></script>
+</body>
+</html>
