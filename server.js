@@ -40,8 +40,17 @@ async function connectMongoDB() {
     return false;
   }
   try {
-    mongoClient = new MongoClient(MONGODB_URI);
+    mongoClient = new MongoClient(MONGODB_URI, {
+      // 解决 Render 免费版与 MongoDB Atlas 的 TLS 兼容性问题
+      serverApi: { version: '1', strict: true, deprecationErrors: true },
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+    });
     await mongoClient.connect();
+    // 测试一下连接是否真的能用
+    await mongoClient.db('admin').command({ ping: 1 });
     const db = mongoClient.db(DB_NAME);
     mongoCollection = db.collection(COLLECTION_NAME);
     useMongoDB = true;
